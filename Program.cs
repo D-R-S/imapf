@@ -38,7 +38,7 @@ class Program
         ProblemInstance instance;
         try
         {
-            instance = ProblemInstance.Import(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "Instances", fileName));
+            instance = ProblemInstance.Import(Path.Combine(Directory.GetCurrentDirectory(), "Instances", fileName));
         }
         catch (Exception e)
         {
@@ -123,7 +123,7 @@ class Program
                             instanceName = $"Instance-{gridSizes[gridSizeIndex]}-{obstaclesProbs[obstaclePercentageIndex]}-{agentListSizes[numOfAgentsIndex]}-{i}";
                             try
                             {
-                                instance = ProblemInstance.Import(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "Instances", instanceName));
+                                instance = ProblemInstance.Import(Path.Combine(Directory.GetCurrentDirectory(), "Instances", instanceName));
                                 instance.instanceId = i;
                             }
                             catch (Exception importException)
@@ -248,7 +248,7 @@ class Program
                         instanceName = $"{Path.GetFileNameWithoutExtension(mapFilePath)}-{agentListSizes[ag]}-{i}";
                         try
                         {
-                            instance = ProblemInstance.Import(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "Instances", instanceName));
+                            instance = ProblemInstance.Import(Path.Combine(Directory.GetCurrentDirectory(), "Instances", instanceName));
                         }
                         catch (Exception importException)
                         {
@@ -302,20 +302,20 @@ class Program
             Debug.WriteLine("Debugger attached - running without a timeout!!");
         }
 
-        if (Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "Instances")) == false)
+        if (Directory.Exists(Path.Combine(Directory.GetCurrentDirectory(), "Instances")) == false)
         {
-            Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "Instances"));
+            Directory.CreateDirectory(Path.Combine(Directory.GetCurrentDirectory(), "Instances"));
         }
 
         Program.onlyReadInstances = false;
 
-        int instances = 100;
+        int instances = 1;
 
         bool runGrids = false;
         bool runDragonAge = false;
         bool runMazesWidth1 = false;
-        bool runSpecific = false;
-        bool runBenchmark = true;
+        bool runSpecific = true;
+        bool runBenchmark = false;
         bool runBenchmarkIncrementally = false;  // Turn on for CA*
 
         if (runGrids == true)
@@ -327,72 +327,51 @@ class Program
             //int[] agentListSizes = new int[] { /*2,*/ 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 21, 22, 23, 24, 25, 26, 27, 28, 29, 30, 31, 32 };
             // Note that success rate drops almost to zero for EPEA* and A*+OD/SIC on 40 agents.
             
-            int[] gridSizes = new int[] { 20, };
+            int[] gridSizes = new int[] { 10, };
             //int[] agentListSizes = new int[] { 5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, /*60, 65, 70, 75, 80, 85, 90, 95, 100, 105, 110, 115, 120, 125, 130, 135, 140, 145, 150*/ };
-            int[] agentListSizes = new int[] { 40, 60, 80, 100 };
+            int[] agentListSizes = new int[] {10,};
 
             //int[] obstaclesPercents = new int[] { 20, };
             //int[] obstaclesPercents = new int[] { /*0, 5, 10, 15, 20, 25, 30, 35, */20, 30, 40};
-            int[] obstaclesPercents = new int[] { /*0, 5, 10,*/ 15, /*20, 25, 30, 35, 20, 30, 40*/ };
+            int[] obstaclesPercents = new int[] { 0,/* 5, 10, 15, 20, 25, 30, 35, 20, 30, 40*/ };
             me.RunExperimentSet(gridSizes, agentListSizes, obstaclesPercents, instances);
         }
         else if (runDragonAge == true)
             me.RunDragonAgeExperimentSet(instances, Program.daoMapPaths); // Obstacle percents and grid sizes built-in to the maps.
         else if (runMazesWidth1 == true)
             me.RunDragonAgeExperimentSet(instances, Program.mazeMapPaths); // Obstacle percents and grid sizes built-in to the maps.
-        else if (runSpecific == true)
+        
+        
+        else if (runSpecific == true) // DT!
         {
             ProblemInstance instance;
-            try
-            {
-                if (args[0].EndsWith(".dll"))
-                    instance = ProblemInstance.Import(args[2], args[1]);
-                else
-                    instance = ProblemInstance.Import(args[1], args[0]);
-            }
-            catch (Exception e)
-            {
-                Console.WriteLine($"Bad problem instance {args[1]}. Error: {e.Message}");
-                Console.WriteLine(e.StackTrace);
-                return;
-            }
+            instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/Instances/Instance-DT-10", isPair:1); //DT  (1 for pair 0 for single_)
+            
+
             Run runner = new Run();  // instantiates stuff unnecessarily
             runner.startTime = runner.ElapsedMillisecondsTotal();
-                
-            IHeuristicCalculator<WorldState> lowLevelHeuristic = new SumIndividualCosts();
+
+            // CHOOSE HEURISTIC: h1 = bfs for single or h2 = a*(h1) for pairs
+            //IHeuristicCalculator<WorldState> lowLevelHeuristic = new SumIndividualCosts(); // DT single agent version
+            IHeuristicCalculator<WorldState> lowLevelHeuristic = new SumPairsCosts(); //DT multi agent with h2
+
             List<uint> agentList = Enumerable.Range(0, instance.agents.Length).Select(x=> (uint)x).ToList(); // FIXME: Must the heuristics really receive a list of uints?
-            lowLevelHeuristic.Init(instance, agentList);
-            ICbsSolver lowLevel = new A_Star(lowLevelHeuristic);
-            ILazyHeuristic<CbsNode> highLevelHeuristic = new MvcHeuristicForCbs();
-            highLevelHeuristic.Init(instance, agentList);
-//            ISolver solver = new CBS(lowLevel, lowLevel,
-//                bypassStrategy: CBS.BypassStrategy.FIRST_FIT_LOOKAHEAD,
-//                conflictChoice: CBS.ConflictChoice.CARDINAL_MDD,
-//                heuristic: highLevelHeuristic,
-//                cacheMdds: true,
-//                useOldCost: true,
-//                replanSameCostWithMdd: true
-//            );
-            //ISolver solver = new IndependenceDetection(lowLevel, new EPEA_Star(lowLevelHeuristic));
-            //ISolver solver = new IndependenceDetection(lowLevel, new CostTreeSearchSolverOldMatching(3));
-            ISolver solver = new IndependenceDetection(lowLevel, new A_Star_WithOD(lowLevelHeuristic));
+            lowLevelHeuristic.Init(instance, agentList); 
+            ISolver solver = new EPEA_Star(lowLevelHeuristic, isPair:true);     // is pair true for pair h    
+            //ISolver solver = new A_Star(lowLevelHeuristic, isPair:false);
             solver.Setup(instance, runner);
             bool solved = solver.Solve();
+
+
+
+
             if (solved == false)
             {
                 Console.WriteLine("Failed to solve");
                 return;
             }
             Plan plan = solver.GetPlan();
-            plan.PrintPlan();
-            //me.RunInstance("Instance-5-15-3-792");
-            //me.RunInstance("Instance-5-15-3-792-4rows");
-            //me.RunInstance("Instance-5-15-3-792-3rows");
-            //me.RunInstance("Instance-5-15-3-792-2rows");
-            //me.RunInstance("corridor1");
-            //me.RunInstance("corridor2");
-            //me.RunInstance("corridor3");
-            //me.RunInstance("corridor4");
+            me.RunInstance("Instance-DT-10");
             return;
         }
         else if (runBenchmark)

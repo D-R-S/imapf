@@ -70,6 +70,7 @@ public class A_Star : ICbsSolver, IMStarSolver, IHeuristicSolver<WorldState>, II
     protected List<CbsConflict> mstarBackPropagationConflictList;
     protected Run runner;
     protected Plan solution;
+    protected bool isPair;
     //// <summary>
     //// For CBS/A*
     //// </summary>
@@ -78,7 +79,7 @@ public class A_Star : ICbsSolver, IMStarSolver, IHeuristicSolver<WorldState>, II
     /// <summary>
     /// Default constructor.
     /// </summary>
-    public A_Star(IHeuristicCalculator<WorldState> heuristic = null, bool mStar = false, bool mStarShuffle = false)
+    public A_Star(IHeuristicCalculator<WorldState> heuristic = null, bool mStar = false, bool mStarShuffle = false, bool isPair=false)
     {
         this.closedList = new Dictionary<WorldState, WorldState>();
         this.openList = new OpenList<WorldState>(this);
@@ -89,6 +90,7 @@ public class A_Star : ICbsSolver, IMStarSolver, IHeuristicSolver<WorldState>, II
 
         this.mstar = mStar;
         this.doMstarShuffle = mStarShuffle;
+        this.isPair = isPair;
     }
 
     /// <summary>

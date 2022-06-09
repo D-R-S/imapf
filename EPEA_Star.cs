@@ -11,8 +11,10 @@ class EPEA_Star : A_Star
     protected int expandedFullStates;
     protected int accExpandedFullStates;
 
+    protected bool isPair;
+
     public EPEA_Star(IHeuristicCalculator<WorldState> heuristic = null, bool mstar = false,
-        bool mstarShuffle = false)
+        bool mstarShuffle = false, bool isPair = false)
         : base(heuristic, mstar, mstarShuffle)
     {
         if (Constants.costFunction == Constants.CostFunction.MAKESPAN ||
@@ -21,12 +23,17 @@ class EPEA_Star : A_Star
         {
             throw new NotImplementedException("Makespan support isn't implemented at the moment. Use A*+OD for now.");
         }
+        this.isPair = isPair;
     }
 
     override protected WorldState CreateSearchRoot(int minDepth = -1, int minCost = -1, MDDNode mddNode = null)
     {
         var root =  new WorldStateForPartialExpansion(this.instance.agents, minDepth, minCost, mddNode);
-        root.sic = (int)SumIndividualCosts.h(root, this.instance);
+        if (isPair)
+            root.sic = (int)SumPairsCosts.h(root, this.instance); //DT ours
+        else
+            root.sic = (int)SumIndividualCosts.h(root, this.instance); //DT original
+        
         return root;
     }
 

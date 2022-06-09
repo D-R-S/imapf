@@ -273,6 +273,8 @@ class IndependenceDetection : ISolver
     public enum ConflictChoice : byte
     {
         FIRST = 0,
+        //SMALLEST_RESULTING_GROUP,
+        //LARGEST_RESULTING_GROUP,
         MOST_CONFLICTING_SMALLEST_RESULTING_GROUP,
         MOST_CONFLICTING_AND_SMALLEST_GROUP,
         LEAST_CONFLICTING_LARGEST_RESULTING_GROUP,

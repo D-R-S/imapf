@@ -43,6 +43,18 @@ public class ProblemInstance
     /// </summary>
     public int[][] singleAgentOptimalCosts;
 
+
+    /// <summary> //DT
+    /// This is a matrix that contains the cost of the optimal path to the goal of every agent pair
+    // from any point in the grid.
+    /// The first dimension of the matrix is the number of agent pairs.
+    /// The second dimension of the matrix is the cardinality of the location of agent 1 from which we want the shortest path (for the pairs).
+    /// The third dimension of the matrix is the cardinality of the location of agent 2 from which we want the shortest path (for the pairs).
+
+    /// </summary>
+    public int[,,] pairsOptimalCosts; // DT#1 maybe change back to two dim and encode pair state with cardinalty fcn
+
+
     /// <summary>
     /// The time it took to compute the shortest paths.
     /// </summary>
@@ -70,7 +82,7 @@ public class ProblemInstance
     /// the y-axis. If there are obstacles, it's more space-efficient to store
     /// data for each non-empty spot.
     /// </summary>
-    public int[,] cardinality;
+    public int[,] cardinality; // DT#1 maybe instead of having a tensor use pair state encoding for pair cardenality
 
     public string gridName;
     public string instanceName;
@@ -83,6 +95,7 @@ public class ProblemInstance
             this.parameters = new Dictionary<string, object>();
     }
 
+ 
     /// <summary>
     /// Create a subproblem of this problem instance, in which only part of the agents are regarded.
     /// </summary>
@@ -203,6 +216,89 @@ public class ProblemInstance
         this.shortestPathComputeTime = endTime - startTime;
     }
 
+   /// <summary> DT main function - 
+    /// input: original instance
+    /// a - split instances into pair instances
+    /// b - Compute the shortest path to the goal of every agent pair in the problem instance,
+    /// from every pair location in the grid. for all pair: A*(h1,pair-instance)
+    /// TODO 
+    /// output: h2 matrix for all pairs
+    /// </summary>
+    public void ComputePairsShortestPaths()
+    {
+        //Debug.WriteLine("Computing the shortest path for all agent starting locations for all pairs ...");
+        Stopwatch watch = Stopwatch.StartNew();
+        double startTime = watch.Elapsed.TotalMilliseconds;
+
+        uint mm = this.numLocations;
+        this.pairsOptimalCosts = new int[this.GetNumOfAgents()/2,mm,mm];
+        for (int ii = 0; ii < this.GetNumOfAgents()/2; ii++)
+            for (int jj = 0; jj < mm; jj++)
+                for (int kk = 0; kk < mm; kk++)
+                    this.pairsOptimalCosts[ii,jj,kk] = -1;
+
+
+
+
+        for (int pairId = 0; pairId < this.GetNumOfAgents(); pairId = pairId + 2)
+        {
+            ProblemInstance pair_instance = create_pair_instance(pairId);
+
+            for (int a1_i = 0; a1_i < grid.Length; ++a1_i) // TODO MAYBE kick out illegal start state pairs DT
+                for (int a1_j = 0; a1_j < grid[a1_i].Length; ++a1_j)
+                {
+                    if (grid[a1_i][a1_j])
+                        continue;
+                
+                    pair_instance.agents[0].lastMove.x = a1_i;
+                    pair_instance.agents[0].lastMove.y = a1_j;
+                    int locationCardinalityA1 = this.cardinality[a1_i, a1_j];
+                    
+                    for (int a2_i = 0; a2_i < grid.Length; ++a2_i)
+                        for (int a2_j = 0; a2_j < grid[a2_i].Length; ++a2_j)
+                        {
+                            if (grid[a2_i][a2_j])
+                                continue;
+
+                            pair_instance.agents[1].lastMove.x = a2_i;
+                            pair_instance.agents[1].lastMove.y = a2_j;
+                            int locationCardinalityA2 = this.cardinality[a2_i, a2_j];
+                            if (locationCardinalityA1 == locationCardinalityA2)
+                                continue;
+                                
+                            Run runner = new Run();  // instantiates stuff unnecessarily
+                            runner.startTime = runner.ElapsedMillisecondsTotal();
+                            IHeuristicCalculator<WorldState> lowLevelHeuristic = new SumIndividualCosts();
+                            List<uint> agentList = Enumerable.Range(0, pair_instance.agents.Length).Select(x=> (uint)x).ToList(); // FIXME: Must the heuristics really receive a list of uints?
+                            lowLevelHeuristic.Init(pair_instance, agentList); // = h1(instance i) = lowLevelHeurisitc(i)
+                            ISolver solver = new EPEA_Star(lowLevelHeuristic);   // solve pair instances to get h2       
+                            solver.Setup(pair_instance, runner);
+                            bool solved = solver.Solve();
+                            
+                            this.pairsOptimalCosts[pairId/2,locationCardinalityA1,locationCardinalityA2] = solver.GetSolutionCost();
+
+                        }
+
+                }
+        }
+
+            
+    }
+
+
+    public ProblemInstance create_pair_instance(int pairID){
+        ProblemInstance pair_instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/Instances/Instance-DT-10", isPair:2);
+        // remove all agents that are not in the current pair
+        AgentState[] current_pair_state = new AgentState[2];
+        current_pair_state[0] = this.agents[pairID];
+        current_pair_state[0].agent.agentNum = 0;
+        current_pair_state[1] = this.agents[pairID+1];
+        current_pair_state[1].agent.agentNum = 1;
+        pair_instance.agents = current_pair_state;
+        pair_instance.ComputeSingleAgentShortestPaths();
+
+        return pair_instance;
+    }
     /// <summary>
     /// Returns the length of the shortest path between a given coordinate and the goal location of the given agent.
     /// </summary>
@@ -235,6 +331,30 @@ public class ProblemInstance
     {
         int locationCardinality = this.cardinality[agentState.lastMove.x, agentState.lastMove.y];
         return this.singleAgentOptimalCosts[agentState.agent.agentNum][locationCardinality];
+    }
+
+        /// <summary>
+    /// Returns the length of the shortest path between a given agent's location and the goal of that agent.
+    /// </summary>
+    /// <param name="agentState"></param>
+    /// <returns>The length of the shortest path between a given agent's location and the goal of that agent</returns>
+    public int GetPairsOptimalCost(int pair,AgentState agent1State, AgentState agent2State)
+    {
+        int locationCardinality1 = this.cardinality[agent1State.lastMove.x, agent1State.lastMove.y];
+        int locationCardinality2 = this.cardinality[agent2State.lastMove.x, agent2State.lastMove.y];
+        Console.WriteLine(locationCardinality1);
+        Console.WriteLine('-');
+        Console.WriteLine(locationCardinality2);
+        Console.WriteLine('-');
+        Console.WriteLine(pair);
+        Console.WriteLine('-');
+        Console.WriteLine(this.pairsOptimalCosts[pair,locationCardinality1,locationCardinality2]);
+        if (this.pairsOptimalCosts[pair,locationCardinality1,locationCardinality2] == -1)
+            return 0;
+
+        Console.WriteLine('-');
+        Console.WriteLine(this.pairsOptimalCosts[pair,locationCardinality1,locationCardinality2]);
+        return this.pairsOptimalCosts[pair,locationCardinality1,locationCardinality2];
     }
 
     /// <summary>
@@ -383,7 +503,7 @@ public class ProblemInstance
     /// <param name="filePath"></param>
     /// <param name="mapFilePath"></param>
     /// <returns></returns>
-    public static ProblemInstance Import(string filePath, string mapFilePath = null)
+    public static ProblemInstance Import(string filePath, string mapFilePath = null, int isPair = 0)
     {
         if (filePath.EndsWith(".agents"))
         {
@@ -480,6 +600,8 @@ public class ProblemInstance
                 }
                 mapFilePath = Path.Combine(Path.GetDirectoryName(filePath), "..", "..", "maps", mapfileName);
             }
+
+            // DT the case where we have a instance 
             else
                 mapfileName = Path.GetFileNameWithoutExtension(mapFilePath);
 
@@ -629,13 +751,37 @@ public class ProblemInstance
                     states[i] = state;
                 }
 
-                // Generate the problem instance
+                // Generate the problem instance 
                 ProblemInstance instance = new ProblemInstance();
                 instance.Init(states, grid);
                 instance.instanceId = instanceId;
                 instance.gridName = gridName;
                 instance.instanceName = Path.GetFileNameWithoutExtension(filePath);
-                instance.ComputeSingleAgentShortestPaths();
+                if (isPair == 1){ // DT
+                    instance.ComputePairsShortestPaths();
+                    instance.ComputeSingleAgentShortestPaths(); 
+                    // for (int i = 0; i < instance.GetNumOfAgents(); i = i+2){ // DT dumb sanity check
+                    //     for(int c1=0; c1 < 4; c1++){
+                    //         for(int c2=0; c2 < ; c2++){
+
+                    //             int h1 = instance.singleAgentOptimalCosts[i][c1] + instance.singleAgentOptimalCosts[i+1][c2];
+                    //             int h2 = instance.pairsOptimalCosts[i/2, c1, c2];
+                    //             if(h1 - h2 < 0){
+                    //                 Console.WriteLine("h2 is worse than h1 - as it should be!");
+                    //             }
+                                
+
+
+                    //         }
+                    //     }
+
+                    // }
+                        
+
+                }
+                else if (isPair == 0)
+                    instance.ComputeSingleAgentShortestPaths();
+                
                 return instance;
             }
         }
@@ -648,7 +794,7 @@ public class ProblemInstance
     /// <param name="mapFileName">For including in .scen file format data</param>
     public void Export(string fileName, string mapFileName = null)
     {
-        TextWriter output = new StreamWriter(Path.Combine(Directory.GetCurrentDirectory(), "..", "..", "..", "Instances", fileName));
+        TextWriter output = new StreamWriter(Path.Combine(Directory.GetCurrentDirectory(), "Instances", fileName));
 
         if (fileName.EndsWith(".scen"))
         {
