@@ -47,11 +47,8 @@ class SumPairsCosts : PDB
         {
             AgentState state_agent1 = s.allAgentsState[i];
             AgentState state_agent2 = s.allAgentsState[i + 1];
-            Console.WriteLine((uint)instance.GetPairsOptimalCost(i/2, state_agent1, state_agent2));
-            Console.WriteLine('_');
             nHeuristic += (uint)instance.GetPairsOptimalCost(i/2, state_agent1, state_agent2); // todo get pair optimal cost
         }
-        Console.WriteLine(nHeuristic);
         return nHeuristic; // if we make - nHeuristic the problem gets solved... we have heuristic problem DT
     }
 

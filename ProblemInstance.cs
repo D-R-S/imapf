@@ -151,7 +151,7 @@ public class ProblemInstance
     /// </summary>
     public void ComputeSingleAgentShortestPaths()
     {
-        Debug.WriteLine("Computing the single agent shortest path for all agents...");
+        //Debug.WriteLine("Computing the single agent shortest path for all agents..."); //DT
         Stopwatch watch = Stopwatch.StartNew();
         double startTime = watch.Elapsed.TotalMilliseconds;
         //return; // Add for generator
@@ -214,6 +214,7 @@ public class ProblemInstance
         }
         double endTime = watch.Elapsed.TotalMilliseconds;
         this.shortestPathComputeTime = endTime - startTime;
+        //Debug.WriteLine("Finished Computing the single agent shortest path for all agents..."); //DT
     }
 
    /// <summary> DT main function - 
@@ -237,8 +238,13 @@ public class ProblemInstance
                 for (int kk = 0; kk < mm; kk++)
                     this.pairsOptimalCosts[ii,jj,kk] = -1;
 
+        int [] start_x_location = new int[this.GetNumOfAgents()];
+        int [] start_y_location = new int[this.GetNumOfAgents()];
+        for (int i = 0; i < this.GetNumOfAgents(); i++){
+            start_x_location[i] = this.agents[i].lastMove.x;
+            start_y_location[i] = this.agents[i].lastMove.y;
 
-
+        }
 
         for (int pairId = 0; pairId < this.GetNumOfAgents(); pairId = pairId + 2)
         {
@@ -282,12 +288,19 @@ public class ProblemInstance
                 }
         }
 
+         for (int i = 0; i < this.GetNumOfAgents(); i++){
+             this.agents[i].lastMove.x = start_x_location[i];
+             this.agents[i].lastMove.y = start_y_location[i];
+
+         }
+        
+
             
     }
 
 
     public ProblemInstance create_pair_instance(int pairID){
-        ProblemInstance pair_instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/Instances/Instance-DT-10", isPair:2);
+        ProblemInstance pair_instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/Instances/Instance-DT-5-8", isPair:2);
         // remove all agents that are not in the current pair
         AgentState[] current_pair_state = new AgentState[2];
         current_pair_state[0] = this.agents[pairID];
@@ -342,18 +355,9 @@ public class ProblemInstance
     {
         int locationCardinality1 = this.cardinality[agent1State.lastMove.x, agent1State.lastMove.y];
         int locationCardinality2 = this.cardinality[agent2State.lastMove.x, agent2State.lastMove.y];
-        Console.WriteLine(locationCardinality1);
-        Console.WriteLine('-');
-        Console.WriteLine(locationCardinality2);
-        Console.WriteLine('-');
-        Console.WriteLine(pair);
-        Console.WriteLine('-');
-        Console.WriteLine(this.pairsOptimalCosts[pair,locationCardinality1,locationCardinality2]);
         if (this.pairsOptimalCosts[pair,locationCardinality1,locationCardinality2] == -1)
-            return 0;
+            return 100000;
 
-        Console.WriteLine('-');
-        Console.WriteLine(this.pairsOptimalCosts[pair,locationCardinality1,locationCardinality2]);
         return this.pairsOptimalCosts[pair,locationCardinality1,locationCardinality2];
     }
 
@@ -760,22 +764,7 @@ public class ProblemInstance
                 if (isPair == 1){ // DT
                     instance.ComputePairsShortestPaths();
                     instance.ComputeSingleAgentShortestPaths(); 
-                    // for (int i = 0; i < instance.GetNumOfAgents(); i = i+2){ // DT dumb sanity check
-                    //     for(int c1=0; c1 < 4; c1++){
-                    //         for(int c2=0; c2 < ; c2++){
 
-                    //             int h1 = instance.singleAgentOptimalCosts[i][c1] + instance.singleAgentOptimalCosts[i+1][c2];
-                    //             int h2 = instance.pairsOptimalCosts[i/2, c1, c2];
-                    //             if(h1 - h2 < 0){
-                    //                 Console.WriteLine("h2 is worse than h1 - as it should be!");
-                    //             }
-                                
-
-
-                    //         }
-                    //     }
-
-                    // }
                         
 
                 }

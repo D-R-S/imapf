@@ -345,23 +345,28 @@ class Program
         else if (runSpecific == true) // DT!
         {
             ProblemInstance instance;
-            instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/Instances/Instance-DT-10", isPair:1); //DT  (1 for pair 0 for single_)
-            
-
             Run runner = new Run();  // instantiates stuff unnecessarily
             runner.startTime = runner.ElapsedMillisecondsTotal();
+            IHeuristicCalculator<WorldState> lowLevelHeuristic = new SumPairsCosts(); 
 
-            // CHOOSE HEURISTIC: h1 = bfs for single or h2 = a*(h1) for pairs
-            //IHeuristicCalculator<WorldState> lowLevelHeuristic = new SumIndividualCosts(); // DT single agent version
-            IHeuristicCalculator<WorldState> lowLevelHeuristic = new SumPairsCosts(); //DT multi agent with h2
+            bool is_Pair = false; 
+            if (is_Pair){
+                 instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/Instances/Instance-DT-irrelevantfornow", isPair:1);
+                 lowLevelHeuristic = new SumPairsCosts(); // DT h2
+            }
+            else{
+                instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/Instances/Instance-DT-3-10", isPair:0); //DT  (1 for pair 0 for single_)
+                lowLevelHeuristic = new SumIndividualCosts(); //DT multi agent with h1
+
+            }            
 
             List<uint> agentList = Enumerable.Range(0, instance.agents.Length).Select(x=> (uint)x).ToList(); // FIXME: Must the heuristics really receive a list of uints?
             lowLevelHeuristic.Init(instance, agentList); 
-            ISolver solver = new EPEA_Star(lowLevelHeuristic, isPair:true);     // is pair true for pair h    
-            //ISolver solver = new A_Star(lowLevelHeuristic, isPair:false);
+            ISolver solver = new EPEA_Star(lowLevelHeuristic, isPair:is_Pair);     // is pair true for pair h    
+            //ISolver solver = new A_Star(lowLevelHeuristic, isPair:is_Pair);
             solver.Setup(instance, runner);
             bool solved = solver.Solve();
-
+            double Total_Milliseconds = runner.ElapsedMillisecondsTotal() - runner.startTime;
 
 
 
@@ -370,8 +375,23 @@ class Program
                 Console.WriteLine("Failed to solve");
                 return;
             }
-            Plan plan = solver.GetPlan();
-            me.RunInstance("Instance-DT-10");
+            //Plan plan = solver.GetPlan();
+
+            
+
+
+            Console.WriteLine();
+
+            int solverSolutionCost = solver.GetSolutionCost();
+            int solverSolutionDepth = solver.GetSolutionDepth();
+            int expanded = solver.GetExpanded();
+
+            Console.WriteLine("solution cost: " + solverSolutionCost.ToString());
+            Console.WriteLine("expanded: " + expanded.ToString());
+            Console.WriteLine( "time: "+Total_Milliseconds.ToString());
+
+            //me.RunInstance("Instance-DT-10");
+
             return;
         }
         else if (runBenchmark)

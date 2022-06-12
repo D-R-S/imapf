@@ -62,7 +62,7 @@ class EPEA_Star : A_Star
 
         if (node.IsAlreadyExpanded() == false)
         {
-            node.calcSingleAgentDeltaFs(instance, this.IsValid);
+            node.calcSingleAgentDeltaFs(instance, this.IsValid);  //DT return here: calc deltas
             expandedFullStates++;
             node.alreadyExpanded = true;
             wasAlreadyExpanded = false;

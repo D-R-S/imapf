@@ -77,7 +77,7 @@ public class WorldState : IComparable<IBinaryHeapItem>, IBinaryHeapItem, IHeuris
     {
         this.allAgentsState = allAgentsState.ToArray();
         this.makespan = allAgentsState.Max(state => state.lastMove.time); // We expect to only find at most two G values within the agent group
-        this.CalculateG(); // G not necessarily zero when solving a partially solved problem.
+        this.CalculateG(); // G not necessarily zero when solving a partially solved problem.   //DT calculates G
         this.primaryTieBreaker = 0;
         this.secondaryTieBreaker = 0;
         this.conflictCounts = new Dictionary<int, int>();  // Unused if not running under CBS, and we can't tell at this point easily

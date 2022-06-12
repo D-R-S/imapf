@@ -109,7 +109,7 @@ public class A_Star : ICbsSolver, IMStarSolver, IHeuristicSolver<WorldState>, II
             Trace.Assert(problemInstance.agents.Length == 1, "Using MDDs to find new paths is currently only supported for single agent search");
             mddRoot = mdd.levels[0].First.Value;
         }
-        WorldState root = this.CreateSearchRoot(minDepth, minCost, mddRoot);
+        WorldState root = this.CreateSearchRoot(minDepth, minCost, mddRoot);   //DT return to here
         root.h = (int)this.heuristic.h(root); // g was already set in the constructor
         if (root.f < minCost)
             root.h = minCost - root.g;  // Will be propagated to children with BPMX as needed
@@ -429,30 +429,6 @@ public class A_Star : ICbsSolver, IMStarSolver, IHeuristicSolver<WorldState>, II
             {
                 Debug.WriteLine($"Expanding node {currentNode}");
             }
-
-            //if (this.instance.agents.Length > 2)
-            //{
-            //    int a = 3;
-            //    int b = (a + 2) * 2;
-
-            //    int x1, x2, x3, y1, y2, y3, x4, y4;
-            //    x1 = 5; y1 = 3;
-            //    x2 = 5; y2 = 4;
-            //    x3 = 6; y3 = 2;
-            //    x4 = 5; y4 = 7;
-            //    if (currentNode.allAgentsState[0].lastMove.x == x1 &&
-            //        currentNode.allAgentsState[0].lastMove.y == y1 &&
-            //        currentNode.allAgentsState[1].lastMove.x == x2 &&
-            //        currentNode.allAgentsState[1].lastMove.y == y2 &&
-            //        currentNode.allAgentsState[2].lastMove.x == x3 &&
-            //        currentNode.allAgentsState[2].lastMove.y == y3 &&
-            //        currentNode.allAgentsState[3].lastMove.x == x4 &&
-            //        currentNode.allAgentsState[3].lastMove.y == y4)
-            //    {
-            //        int c = 3;
-            //        int d = 3 * c;
-            //    }
-            //}
 
             if (this.mstar == false && // Backpropagation can cause the root to be re-expanded after many more expensive nodes were expanded.
                 (this.openList is DynamicLazyOpenList<WorldState>) == false && // When the open list has just one node,
