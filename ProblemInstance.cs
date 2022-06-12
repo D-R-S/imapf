@@ -300,7 +300,7 @@ public class ProblemInstance
 
 
     public ProblemInstance create_pair_instance(int pairID){
-        ProblemInstance pair_instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/Instances/Instance-DT-5-8", isPair:2);
+        ProblemInstance pair_instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/example_Instances/Instance-DT-5-8", isPair:2);
         // remove all agents that are not in the current pair
         AgentState[] current_pair_state = new AgentState[2];
         current_pair_state[0] = this.agents[pairID];
