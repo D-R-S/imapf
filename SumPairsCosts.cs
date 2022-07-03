@@ -41,15 +41,17 @@ class SumPairsCosts : PDB
     public static uint h(WorldState s, ProblemInstance instance)
     {
         uint nHeuristic = 0;
-        int nn = instance.GetNumOfAgents();
-        //TODO:here we could check if nn is even (we consider even only)
-        for(int i=0; i< nn; i = i+2) // todo for each pair state
+        int nunber_agents = instance.GetNumOfAgents();
+        int nn = nunber_agents % 2 == 0 ? nunber_agents : nunber_agents - 1;
+        for(int i=0; i< nn; i = i+2)
         {
             AgentState state_agent1 = s.allAgentsState[i];
             AgentState state_agent2 = s.allAgentsState[i + 1];
-            nHeuristic += (uint)instance.GetPairsOptimalCost(i/2, state_agent1, state_agent2); // todo get pair optimal cost
+            nHeuristic += (uint)instance.GetPairsOptimalCost(i/2, state_agent1, state_agent2);
         }
-        return nHeuristic; // if we make - nHeuristic the problem gets solved... we have heuristic problem DT
+        uint add_last_agent = nunber_agents % 2 == 0 ? 0 : (uint)instance.GetSingleAgentOptimalCost(s.allAgentsState[nn]);
+        nHeuristic += add_last_agent;
+        return nHeuristic;
     }
 
     public override string ToString()
@@ -127,7 +129,7 @@ class MaxPairsCosts : PDB
         for(int i=0; i< nn; i = i+2) {
             AgentState state_agent1 = s.allAgentsState[i];
             AgentState state_agent2 = s.allAgentsState[i + 1];
-            uint heuristic = (uint)instance.GetPairsOptimalCost(i/2, state_agent1, state_agent2); // todo get pair optimal cost
+            uint heuristic = (uint)instance.GetPairsOptimalCost(i/2, state_agent1, state_agent2);
             if (heuristic > maxHeuristic)
             {
                 maxHeuristic = heuristic;

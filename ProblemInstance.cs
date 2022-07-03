@@ -232,6 +232,7 @@ public class ProblemInstance
         double startTime = watch.Elapsed.TotalMilliseconds;
 
         uint mm = this.numLocations;
+        int half_num_agents = this.GetNumOfAgents()/2;
         this.pairsOptimalCosts = new int[this.GetNumOfAgents()/2,mm,mm];
         for (int ii = 0; ii < this.GetNumOfAgents()/2; ii++)
             for (int jj = 0; jj < mm; jj++)
@@ -246,7 +247,9 @@ public class ProblemInstance
 
         }
 
-        for (int pairId = 0; pairId < this.GetNumOfAgents(); pairId = pairId + 2)
+        int threshold = this.GetNumOfAgents() % 2 == 0 ? this.GetNumOfAgents() : this.GetNumOfAgents() - 2; 
+
+        for (int pairId = 0; pairId < threshold; pairId = pairId + 2)
         {
             ProblemInstance pair_instance = create_pair_instance(pairId);
 
@@ -300,7 +303,7 @@ public class ProblemInstance
 
 
     public ProblemInstance create_pair_instance(int pairID){
-        ProblemInstance pair_instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/example_Instances/Instance-DT-5-8", isPair:2);
+        ProblemInstance pair_instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/example_instances/Instance-DT-3-4", isPair:2);
         // remove all agents that are not in the current pair
         AgentState[] current_pair_state = new AgentState[2];
         current_pair_state[0] = this.agents[pairID];

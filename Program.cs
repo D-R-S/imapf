@@ -347,26 +347,27 @@ class Program
             ProblemInstance instance;
             Run runner = new Run();  // instantiates stuff unnecessarily
             runner.startTime = runner.ElapsedMillisecondsTotal();
+            double start_Milliseconds = runner.ElapsedMillisecondsTotal();
             IHeuristicCalculator<WorldState> lowLevelHeuristic = new SumPairsCosts(); 
 
-            bool is_Pair = false; 
+            bool is_Pair = true; 
             if (is_Pair){
-                 instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/Instances/Instance-DT-irrelevantfornow", isPair:1);
+                 instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/example_instances/Instance-DT-3-4", isPair:1);
                  lowLevelHeuristic = new SumPairsCosts(); // DT h2
             }
             else{
-                instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/Instances/Instance-DT-3-10", isPair:0); //DT  (1 for pair 0 for single_)
+                instance = ProblemInstance.Import(Directory.GetCurrentDirectory()+"/example_instances/Instance-DT-3-4", isPair:0); //DT  (1 for pair 0 for single_)
                 lowLevelHeuristic = new SumIndividualCosts(); //DT multi agent with h1
 
             }            
 
             List<uint> agentList = Enumerable.Range(0, instance.agents.Length).Select(x=> (uint)x).ToList(); // FIXME: Must the heuristics really receive a list of uints?
             lowLevelHeuristic.Init(instance, agentList); 
-            ISolver solver = new EPEA_Star(lowLevelHeuristic, isPair:is_Pair);     // is pair true for pair h    
-            //ISolver solver = new A_Star(lowLevelHeuristic, isPair:is_Pair);
+            //ISolver solver = new EPEA_Star(lowLevelHeuristic, isPair:is_Pair); // does not work for isPair=true
+            ISolver solver = new A_Star(lowLevelHeuristic, isPair:is_Pair);
             solver.Setup(instance, runner);
             bool solved = solver.Solve();
-            double Total_Milliseconds = runner.ElapsedMillisecondsTotal() - runner.startTime;
+            double Total_Milliseconds = runner.ElapsedMillisecondsTotal() - start_Milliseconds;
 
 
 
@@ -385,8 +386,10 @@ class Program
             int solverSolutionCost = solver.GetSolutionCost();
             int solverSolutionDepth = solver.GetSolutionDepth();
             int expanded = solver.GetExpanded();
+            int generated = solver.GetGenerated();
 
             Console.WriteLine("solution cost: " + solverSolutionCost.ToString());
+            Console.WriteLine("generated: " + generated.ToString());
             Console.WriteLine("expanded: " + expanded.ToString());
             Console.WriteLine( "time: "+Total_Milliseconds.ToString());
 
