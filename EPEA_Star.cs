@@ -62,14 +62,19 @@ class EPEA_Star : A_Star
 
         if (node.IsAlreadyExpanded() == false)
         {
-            node.calcSingleAgentDeltaFs(instance, this.IsValid);  //DT return here: calc deltas
+
+            if (isPair) 
+                node.calcPairsDeltaFs(instance, this.IsValid);   // DT  added calcPairsDeltaFs  
+            else 
+                node.calcSingleAgentDeltaFs(instance, this.IsValid);
+            
             expandedFullStates++;
             node.alreadyExpanded = true;
             wasAlreadyExpanded = false;
             //node.hBonus = 0; // Locking any hbonus that doesn't come from partial expansion
             node.targetDeltaF = 0; // Assuming a consistent heuristic (as done in the paper), the min delta F is zero.
             node.remainingDeltaF = node.targetDeltaF; // Just for the following hasChildrenForCurrentDeltaF call.
-            while (node.hasMoreChildren() && node.hasChildrenForCurrentDeltaF() == false) // DeltaF=0 may not be possible if all agents have obstacles between their location and the goal
+            while (node.hasMoreChildren() && node.hasChildrenForCurrentDeltaF(isPair) == false) // DeltaF=0 may not be possible if all agents have obstacles between their location and the goal
             {
                 node.targetDeltaF++;
                 node.remainingDeltaF = node.targetDeltaF;
@@ -111,10 +116,10 @@ class EPEA_Star : A_Star
             {
                 node.targetDeltaF++;
                 node.remainingDeltaF = node.targetDeltaF; // Just for the following hasChildrenForCurrentDeltaF call.
-            } while (node.hasMoreChildren() && node.hasChildrenForCurrentDeltaF() == false);
+            } while (node.hasMoreChildren() && node.hasChildrenForCurrentDeltaF(isPair) == false);
         } while (node.hasMoreChildren() && node.g + node.sic + node.targetDeltaF <= node.minGoalCost);  // Generate more children immediately if we have a lower bound on the solution depth
 
-        if (node.hasMoreChildren() && node.hasChildrenForCurrentDeltaF() && node.g + node.sic + node.targetDeltaF <= this.maxSolutionCost)
+        if (node.hasMoreChildren() && node.hasChildrenForCurrentDeltaF(isPair) && node.g + node.sic + node.targetDeltaF <= this.maxSolutionCost)
         {
             // Assuming the heuristic used doesn't give a lower estimate than SIC for each and every one of the node's children,
             // (an ok assumption since SIC is quite basic, no heuristic we use is ever worse than it)
@@ -147,13 +152,13 @@ class EPEA_Star : A_Star
         // Update target F
         foreach (WorldState simpleLookingNode in generated) {
             var node = (WorldStateForPartialExpansion)simpleLookingNode;
-            node.UpdateRemainingDeltaF(agentIndex);
+            node.UpdateRemainingDeltaF(isPair, agentIndex);
         }
 
         // Prune nodes that can't get to the target F - even before their real H is calculated!
         generated = generated.Where(
             node => ((WorldStateForPartialExpansion)node).remainingDeltaF != ushort.MaxValue && // last move was good
-                    ((WorldStateForPartialExpansion)node).hasChildrenForCurrentDeltaF(agentIndex+1)
+                    ((WorldStateForPartialExpansion)node).hasChildrenForCurrentDeltaF(isPair, agentIndex+1)
         ).ToList();
 
         return generated;
@@ -165,7 +170,10 @@ class EPEA_Star : A_Star
 
         var node = (WorldStateForPartialExpansion)currentNode;
         node.ClearExpansionData();
-        node.sic = (int)SumIndividualCosts.h(node, this.instance);
+        if (isPair) 
+            node.sic=(int)SumPairsCosts.h(node, this.instance);    // DT  added SumPairCosts  
+        else 
+            node.sic = (int)SumIndividualCosts.h(node, this.instance);     
         // We defer calling the expensive calcSingleAgentDeltaFs to when the node is expanded, which means we might only then find out the node's current
         // target deltaF=0 is not possibe.
         return ret;

@@ -363,8 +363,21 @@ class Program
 
             List<uint> agentList = Enumerable.Range(0, instance.agents.Length).Select(x=> (uint)x).ToList(); // FIXME: Must the heuristics really receive a list of uints?
             lowLevelHeuristic.Init(instance, agentList); 
-            //ISolver solver = new EPEA_Star(lowLevelHeuristic, isPair:is_Pair); // does not work for isPair=true
-            ISolver solver = new A_Star(lowLevelHeuristic, isPair:is_Pair);
+            ISolver solver = new EPEA_Star(lowLevelHeuristic, isPair:is_Pair); // does not work for isPair=true
+            //ISolver solver = new A_Star(lowLevelHeuristic, isPair:is_Pair);
+
+            //ICbsSolver lowLevel = new A_Star(lowLevelHeuristic);
+            //ILazyHeuristic<CbsNode> highLevelHeuristic = new MvcHeuristicForCbs();
+            //highLevelHeuristic.Init(instance, agentList);
+            //ISolver solver = new CBS(lowLevel, lowLevel,
+            //   bypassStrategy: CBS.BypassStrategy.FIRST_FIT_LOOKAHEAD,
+            //   conflictChoice: CBS.ConflictChoice.CARDINAL_MDD,
+            //   heuristic: highLevelHeuristic,
+            //   cacheMdds: true,
+            //   useOldCost: true,
+            //   replanSameCostWithMdd: true
+            //);
+
             solver.Setup(instance, runner);
             bool solved = solver.Solve();
             double Total_Milliseconds = runner.ElapsedMillisecondsTotal() - start_Milliseconds;

@@ -232,7 +232,7 @@ public class ProblemInstance
         double startTime = watch.Elapsed.TotalMilliseconds;
 
         uint mm = this.numLocations;
-        int half_num_agents = this.GetNumOfAgents()/2;
+        int half_num_agents = this.GetNumOfAgents() / 2;
         this.pairsOptimalCosts = new int[this.GetNumOfAgents()/2,mm,mm];
         for (int ii = 0; ii < this.GetNumOfAgents()/2; ii++)
             for (int jj = 0; jj < mm; jj++)
@@ -337,6 +337,19 @@ public class ProblemInstance
     {
         return this.singleAgentOptimalCosts[agentNum][this.cardinality[move.x, move.y]];
     }
+
+    /// <summary>
+    /// Returns the length of the shortest path between a given coordinate and the goal location of the given pair.
+    /// </summary>
+    /// <param name="pairId"></param>
+    /// <param name="move1"></param>
+    /// <param name="move2"></param>
+    /// <returns>The length of the shortest path from x,y to the goal of the agent.</returns>
+    public int GetPairsOptimalCost(int pairID, Move move1, Move move2)
+    {
+        return this.pairsOptimalCosts[pairID, this.cardinality[move1.x, move1.y], this.cardinality[move2.x, move2.y]];
+    }
+
 
     /// <summary>
     /// Returns the length of the shortest path between a given agent's location and the goal of that agent.
